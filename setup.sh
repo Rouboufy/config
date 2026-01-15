@@ -357,10 +357,31 @@ require("lazy").setup({
     dependencies = { "nvim-lua/plenary.nvim" },
     config = function()
       require("opencode").setup({
-        api_key = os.getenv("OPENCODE_API_KEY") or "your_api_key_here",
-        quick_chat = {
-          default_model = "big-pickle",
+        preferred_picker = nil,
+        preferred_completion = nil,
+        default_global_keymaps = true,
+        default_mode = 'build',
+        legacy_commands = true,
+        keymap_prefix = '<leader>o',
+        opencode_executable = 'opencode',
+        keymap = {
+          editor = {
+            ['<leader>og'] = { 'toggle', desc = 'Toggle Opencode window' },
+            ['<leader>oi'] = { 'open_input', desc = 'Open input window' },
+            ['<leader>oI'] = { 'open_input_new_session', desc = 'Open input (new session)' },
+            ['<leader>oh'] = { 'select_history', desc = 'Select from history' },
+            ['<leader>oo'] = { 'open_output', desc = 'Open output window' },
+            ['<leader>ot'] = { 'toggle_focus', desc = 'Toggle focus' },
+            ['<leader>oT'] = { 'timeline', desc = 'Session timeline' },
+            ['<leader>oq'] = { 'close', desc = 'Close Opencode window' },
+            ['<leader>os'] = { 'select_session', desc = 'Select session' },
+            ['<leader>oR'] = { 'rename_session', desc = 'Rename session' },
+            ['<leader>op'] = { 'configure_provider', desc = 'Configure provider' },
+            ['<leader>oz'] = { 'toggle_zoom', desc = 'Toggle zoom' },
+            ['<leader>ov'] = { 'paste_image', desc = 'Paste image from clipboard' },
+          },
         },
+        api_key = os.getenv("OPENCODE_API_KEY") or "your_api_key_here",
       })
       vim.keymap.set('n', '<leader>oc', ':Opencode<CR>', { desc = "Open OpenCode" })
       vim.keymap.set('v', '<leader>oc', ':Opencode<CR>', { desc = "Open OpenCode with selection" })
