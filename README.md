@@ -10,6 +10,16 @@ cd config
 ./setup.sh
 ```
 
+## ✨ Features
+
+- **Cross-Platform Support**: Works seamlessly on **macOS** and **Linux**.
+- **Smart Dependency Management**: 
+    - Automatically checks for and installs required software: `Neovim`, `Tmux`, `Git`, and `Curl`.
+    - **Intelligent Privilege Handling**: Uses system package managers (`apt`, `dnf`, `yum`, `pacman`) if `sudo` is available.
+    - **Homebrew Fallback**: If you don't have sudo privileges, the script automatically uses **Homebrew** to install dependencies.
+    - **Auto-Homebrew**: If Homebrew is missing and needed, the script will install it for you locally.
+- **Zero-Config Deployment**: Clones plugins and sets up your environment in one go.
+
 ## ⌨️ Keybindings & Shortcuts
 
 ### General
