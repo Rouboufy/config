@@ -1,0 +1,242 @@
+vim.g.mapleader = ' '
+vim.g.localleader = ' '
+vim.keymap.set('n', '<leader>pv', vim.cmd.Ex)
+vim.keymap.set('n', '<leader>wq', vim.cmd.wq)
+vim.opt.relativenumber = true
+vim.opt.nu = true
+
+vim.opt.tabstop = 4
+vim.opt.softtabstop = 4
+vim.opt.shiftwidth = 4
+vim.opt.expandtab = false
+
+vim.opt.smartindent = true
+
+vim.opt.wrap = false
+vim.opt.swapfile = false
+vim.opt.backup = false
+
+vim.opt.colorcolumn = '80'
+
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not vim.loop.fs_stat(lazypath) then
+  vim.fn.system({
+    "git",
+    "clone",
+    "--filter=blob:none",
+    "https://github.com/folke/lazy.nvim.git",
+    "--branch=stable",
+    lazypath,
+  })
+end
+vim.opt.rtp:prepend(lazypath)   
+
+require("lazy").setup({
+  {
+    "Shatur/neovim-ayu",
+    lazy = false,
+    priority = 1000,
+    config = function()
+      vim.cmd.colorscheme("ayu-dark")
+    end,
+  },
+  {
+    "jackMort/ChatGPT.nvim",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      "nvim-telescope/telescope.nvim",
+    },
+    config = function()
+      require("chatgpt").setup()
+    end,
+  },
+  {
+    "christoomey/vim-tmux-navigator",
+    lazy = false,
+  },
+  {
+    "preservim/nerdcommenter",
+  },
+  {
+    "nvim-treesitter/nvim-treesitter",
+    build = ":TSUpdate",
+    config = function()
+      local ok, configs = pcall(require, "nvim-treesitter.configs")
+      if ok then
+        configs.setup({
+          ensure_installed = { "c", "lua", "vim", "vimdoc", "query" },
+          highlight = { enable = true },
+          indent = { enable = true },
+        })
+      end
+    end,
+  },
+  {
+    "hrsh7th/nvim-cmp",
+    dependencies = {
+      "hrsh7th/cmp-nvim-lsp",
+      "hrsh7th/cmp-buffer",
+      "hrsh7th/cmp-path",
+      "hrsh7th/cmp-cmdline",
+      "L3MON4D3/LuaSnip",
+      "saadparwaiz1/cmp_luasnip",
+      "rafamadriz/friendly-snippets",
+    },
+    config = function()
+      local cmp = require("cmp")
+      local luasnip = require("luasnip")
+
+      cmp.setup({
+        snippet = {
+          expand = function(args)
+            luasnip.lsp_expand(args.body)
+          end,
+        },
+        mapping = cmp.mapping.preset.insert({
+          ['<C-b>'] = cmp.mapping.scroll_docs(-4),
+          ['<C-f>'] = cmp.mapping.scroll_docs(4),
+          ['<C-Space>'] = cmp.mapping.complete(),
+          ['<C-e>'] = cmp.mapping.abort(),
+          ['<CR>'] = cmp.mapping.confirm({ select = true }),
+          ['<Tab>'] = cmp.mapping.select_next_item(),
+          ['<S-Tab>'] = cmp.mapping.select_prev_item(),
+        }),
+        sources = cmp.config.sources({
+          { name = 'nvim_lsp' },
+          { name = 'luasnip' },
+          { name = 'buffer' },
+          { name = 'path' },
+        }),
+      })
+
+      -- Use cmdline & path source for ':' (if you enabled `native_menu`, this won't work anymore).
+      cmp.setup.cmdline(':', {
+        mapping = cmp.mapping.preset.cmdline(),
+        sources = cmp.config.sources({
+          { name = 'path' }
+        }, {
+          { name = 'cmdline' }
+        })
+      })
+    end,
+  },
+
+  {
+    "neovim/nvim-lspconfig",
+    config = function()
+        local cmp_capabilities = require('cmp_nvim_lsp').default_capabilities()
+      local function on_attach(client, bufnr)
+        local opts = { buffer = bufnr }
+        vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
+        vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
+        vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
+        vim.keymap.set('n', '<space>rn', vim.lsp.buf.rename, opts)
+        vim.keymap.set({ 'n', 'v' }, '<space>ca', vim.lsp.buf.code_action, opts)
+        vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
+        vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, opts)
+        vim.keymap.set('n', ']d', vim.diagnostic.goto_next, opts)
+        vim.keymap.set('n', '<space>e', vim.diagnostic.open_float, opts)
+      end
+
+      vim.api.nvim_create_autocmd("FileType", {
+        pattern = { "c", "cpp", "h", "hpp" },
+        callback = function(args)
+          local bufnr = args.buf
+          vim.schedule(function()
+            if #vim.lsp.get_clients({ bufnr = bufnr }) == 0 then
+              vim.lsp.start({
+                name = "clangd",
+                cmd = { "clangd", "--background-index" },
+                root_dir = vim.fn.getcwd,
+                on_attach = on_attach,
+                capabilities = cmp_capabilities,
+              })
+            end
+          end)
+        end,
+      })
+
+      vim.api.nvim_create_user_command("LspStart", function()
+        local bufnr = vim.api.nvim_get_current_buf()
+        if #vim.lsp.get_clients({ bufnr = bufnr }) == 0 then
+          vim.lsp.start({
+            name = "clangd",
+            cmd = { "clangd", "--background-index" },
+            root_dir = vim.fn.getcwd,
+            on_attach = on_attach,
+            capabilities = cmp_capabilities,
+          })
+          print("Clangd LSP started")
+        else
+          print("Clangd LSP already running")
+        end
+      end, {})
+    end,
+  },
+  {
+    "MoulatiMehdi/42header.nvim",
+    config = function()
+      require('42header').setup({
+        username = 'your_username',
+        email = 'your_email@student.42.fr'
+      })
+    end,
+  },
+})
+
+vim.keymap.set('n', '<leader>lsp', function()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local cmp_capabilities = require('cmp_nvim_lsp').default_capabilities()
+  if #vim.lsp.get_clients({ bufnr = bufnr }) == 0 then
+    vim.lsp.start({
+      name = "clangd",
+      cmd = { "clangd", "--background-index", "--std=c11" },
+      root_dir = vim.fn.getcwd,
+      on_attach = function(client, bufnr)
+        local opts = { buffer = bufnr }
+        vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
+        vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
+        vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
+        vim.keymap.set('n', '<space>rn', vim.lsp.buf.rename, opts)
+        vim.keymap.set({ 'n', 'v' }, '<space>ca', vim.lsp.buf.code_action, opts)
+        vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
+        vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, opts)
+        vim.keymap.set('n', ']d', vim.diagnostic.goto_next, opts)
+        vim.keymap.set('n', '<space>e', vim.diagnostic.open_float, opts)
+      end,
+    })
+    print("LSP started")
+  else
+    print("LSP already running")
+  end
+end, { desc = "Start LSP manually" })
+
+
+-- OpenCode info
+vim.api.nvim_create_user_command("OpenCodeInfo", function()
+  print("OpenCode Usage:")
+  print("  <leader>oc - Open Opencode interface")
+  print("  Then type: quick_chat (for chat with current context)")
+  print("  Or type: help (to see all commands)")
+  print("")
+  print("Available Opencode commands:")
+  print("  quick_chat - Chat with current buffer/selection")
+  print("  new - Create new session")
+  print("  sessions - Select existing session")
+  print("  models - Switch provider/model")
+  print("  help - Show full help")
+  print("")
+  print("42 Header:")
+  print("  :Stdheader - Insert 42 school header")
+  print("  <F1> - Insert 42 school header")
+  print("  vim.g.user42 = 'your_username' (to set your name)")
+  print("  vim.g.mail42 = 'your_email@student.42.fr' (to set your email)")
+  print("")
+  print("NERDCommenter:")
+  print("  <leader>cc - Comment line")
+  print("  <leader>cu - Uncomment line")
+  print("  <leader>c<space> - Toggle comment")
+  print("")
+  print("Tmux Navigator:")
+  print("  Ctrl+h/j/k/l - Navigate between tmux panes and nvim windows")
+end, { desc = "Show usage info" })
